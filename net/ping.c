@@ -76,6 +76,7 @@ void ping_start(void)
 	printf("Using %s device\n", eth_get_name());
 	net_set_timeout_handler(10000UL, ping_timeout_handler);
 
+	printf("ping_send begin\n");
 	ping_send();
 }
 

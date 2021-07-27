@@ -56,8 +56,9 @@ void arp_raw_request(struct in_addr source_ip, const uchar *target_ethaddr,
 	uchar *pkt;
 	struct arp_hdr *arp;
 	int eth_hdr_size;
-
-	debug_cond(DEBUG_DEV_PKT, "ARP broadcast %d\n", arp_wait_try);
+	char buf[20];
+	ip_to_string(source_ip,buf);
+	debug_cond(DEBUG_DEV_PKT, "ARP broadcast %d, src_ip=%s\n", arp_wait_try,buf);
 
 	pkt = arp_tx_packet;
 

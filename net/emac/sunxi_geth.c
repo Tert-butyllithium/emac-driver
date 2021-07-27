@@ -24,16 +24,11 @@
 
 #include "../../include/common.h"
 
+extern u64 PHY_CLK_REG_REMAPPED;
+extern u64 CCMU_BASE_REMAPPED;
+extern u64 IOBASE_REMAPPED;
 
 
-#define IOBASE                  0x04500000
-#define PHY_CLK_REG             (0x03000000 + 0x30)  /* SYS_CFG_BASE + EMAC_EPHY_CLK_REG0 */
-#define CCMU_BASE               0x02001000  /* CCMU Base Address */
-#define CCMU_GMAC_CLK_REG       0x097c	/* GMAC_BGR_REG */
-#define CCMU_GMAC_RST_BIT       16	/* GMAC_RST */
-#define CCMU_GMAC_GATING_BIT    0	/* GMAC_GATING */
-#define CCMU_EPHY_CLK_REG       0x0970	/* GMAC_25M_CLK_REG */
-#define CCMU_EPHY_GATING_BIT    31	/* GMAC_25M_CLK_GATING */
 #define DISABLE_AUTONEG
 //#define CONFIG_HARD_CHECKSUM	/* EMAC_RX_CTL0 bit27: CHECK_CRC */
 #define CONFIG_SUNXI_EXT_PHY
@@ -531,16 +526,17 @@ static int geth_sys_init(void)
 	used_type = INT_PHY;
 #endif
 
+	printf("PHY_CLK_REG_REMAPPED: %llx (%x)",PHY_CLK_REG_REMAPPED, PHY_CLK_REG);
 	/* Enable clk for ephy */
-	value = readl((void *)PHY_CLK_REG);
+	value = readl((void *)PHY_CLK_REG_REMAPPED);
 	if (used_type == INT_PHY) {
-		reg_val = readl((void *)(CCMU_BASE + 0x0070));
+		reg_val = readl((void *)(CCMU_BASE_REMAPPED + 0x0070));
 		reg_val |= (1 << 0);
-		writel(reg_val, (void *)(CCMU_BASE + 0x0070));
+		writel(reg_val, (void *)(CCMU_BASE_REMAPPED + 0x0070));
 
-		reg_val = readl((void *)(CCMU_BASE + 0x02c8));
+		reg_val = readl((void *)(CCMU_BASE_REMAPPED + 0x02c8));
 		reg_val |= (1 << 2);
-		writel(reg_val, (void *)(CCMU_BASE + 0x02c8));
+		writel(reg_val, (void *)(CCMU_BASE_REMAPPED + 0x02c8));
 
 		value |= (1 << 15);
 		value &= ~(1 << 16);
@@ -619,31 +615,31 @@ static int geth_sys_init(void)
 	value &= ~(0x1f << 5);
 	value |= ((rx_delay & 0x1f) << 5);
 
-	writel(value, (void *)PHY_CLK_REG);
+	writel(value, (void *)PHY_CLK_REG_REMAPPED);
 
 	/* enable clk for gmac */
 #if defined(CONFIG_SUN50IW6P1) || defined(CONFIG_SUN8IW12P1) \
     || defined(CONFIG_SUN8IW12P1_NOR) || defined(CONFIG_MACH_SUN50IW9) \
     || defined(CONFIG_MACH_SUN8IW19) \
     || defined(CONFIG_MACH_SUN8IW20) || defined(CONFIG_MACH_SUN20IW1)
-	reg_val = readl((void *)(CCMU_BASE + CCMU_GMAC_CLK_REG));
+	reg_val = readl((void *)(CCMU_BASE_REMAPPED + CCMU_GMAC_CLK_REG));
 	reg_val |= (1 << CCMU_GMAC_RST_BIT);   /* Reset Deassert */
 	reg_val |= (1 << CCMU_GMAC_GATING_BIT);
-	writel(reg_val, (void *)(CCMU_BASE + CCMU_GMAC_CLK_REG));
+	writel(reg_val, (void *)(CCMU_BASE_REMAPPED + CCMU_GMAC_CLK_REG));
 #else
-	reg_val = readl((void *)(CCMU_BASE + AHB1_GATING));
+	reg_val = readl((void *)(CCMU_BASE_REMAPPED + AHB1_GATING));
 	reg_val |= AHB1_GATING_BIT;
-	writel(reg_val, (void *)(CCMU_BASE + AHB1_GATING));
+	writel(reg_val, (void *)(CCMU_BASE_REMAPPED + AHB1_GATING));
 
-	reg_val = readl((void *)(CCMU_BASE + AHB1_RESET));
+	reg_val = readl((void *)(CCMU_BASE_REMAPPED + AHB1_RESET));
 	reg_val |= AHB1_RESET_BIT;
-	writel(reg_val, (void *)(CCMU_BASE + AHB1_RESET));
+	writel(reg_val, (void *)(CCMU_BASE_REMAPPED + AHB1_RESET));
 #endif
 
 	/* enable ephy clk */
 	if (use_ephy_clk == 1) {
 		printf("gmac: *** using ephy_clk ***\n");
-		reg_val = readl((void *)(CCMU_BASE + CCMU_EPHY_CLK_REG));
+		reg_val = readl((void *)(CCMU_BASE_REMAPPED + CCMU_EPHY_CLK_REG));
 #if defined(CONFIG_MACH_SUN50IW9) || defined(CONFIG_MACH_SUN8IW19) || \
     defined(CONFIG_MACH_SUN8IW20) || defined(CONFIG_MACH_SUN20IW1)
 		/* set CCMU_EPHY_CLK_REG's bit30 and bit31 to 1 */
@@ -651,7 +647,7 @@ static int geth_sys_init(void)
 #else
 		reg_val |= (1 << CCMU_EPHY_GATING_BIT);
 #endif
-		writel(reg_val, (void *)(CCMU_BASE + CCMU_EPHY_CLK_REG));
+		writel(reg_val, (void *)(CCMU_BASE_REMAPPED + CCMU_EPHY_CLK_REG));
 	}
 
 	return 0;
@@ -765,7 +761,7 @@ static int mii_phy_init(struct eth_device *dev)
 
 	/* Wait BMSR_ANEGCOMPLETE be set */
 	while (!(geth_phy_read(dev, phy_addr, MII_BMSR) & BMSR_ANEGCOMPLETE)) {
-		if (i > 4) {
+		if (i > 4 && (i%1000 == 0)) {
 			printf("Warning: Auto negotiation timeout!\n");
 		}
 		udelay(500*1000);
@@ -916,6 +912,8 @@ int geth_write_hwaddr(struct eth_device *dev)
 	u32 mac;
 	unsigned char *addr;
 
+	printf("eth_write_hwaddr\n");
+	printf("dev->iobase : %llx\n",dev->iobase);
 	addr = &(dev->enetaddr[0]);
 	mac  = (addr[5] << 8) | addr[4];
 	writel(mac, (void *)(dev->iobase + GETH_ADDR_HI(0)));
@@ -949,7 +947,7 @@ static phys_addr_t noncached_alloc(size_t size, size_t align)
 int geth_initialize(bd_t *bis)
 {
 	struct eth_device *dev;
-	u32 buf_addr;
+	u64 buf_addr;
 
 	dev = (struct eth_device *)malloc(sizeof *dev);
 	if (!dev)
@@ -958,35 +956,40 @@ int geth_initialize(bd_t *bis)
 	memset(dev, 0, (size_t)sizeof(*dev));
 	strcpy(dev->name, "eth0");
 
-	buf_addr = (u32)noncached_alloc(sizeof(struct dma_desc), 64);
+	buf_addr = (u64)noncached_alloc(sizeof(struct dma_desc), 64);
 	dma_desc_tx = (struct dma_desc *)(unsigned long)buf_addr;
 	if (dma_desc_tx == NULL)
 		goto err;
 
-	buf_addr = (u32)noncached_alloc(sizeof(struct dma_desc), 64);
+	buf_addr = (u64)noncached_alloc(sizeof(struct dma_desc), 64);
 	dma_desc_rx = (struct dma_desc *)(unsigned long)buf_addr;
 	if (dma_desc_rx == NULL)
 		goto err;
 
-	buf_addr = (u32)noncached_alloc(2048, 64);
+	buf_addr = (u64)noncached_alloc(2048, 64);
 	rx_packet = (char *)(unsigned long)buf_addr;
 	if (rx_packet == NULL)
 		goto err;
 
-	buf_addr = (u32)noncached_alloc(2048, 64);
+	buf_addr = (u64)noncached_alloc(2048, 64);
 	rx_handle_buf = (char *)(unsigned long)buf_addr;
 	if (rx_handle_buf == NULL)
 		goto err;
 
+	printf("crashed after here?\n");
+	printf("dev addr: %p\n", dev);
 	/* set random hwaddr for mac */
 	random_ether_addr(dev->enetaddr);
+	printf("random addr: %s\n",dev->enetaddr);
 
-	dev->iobase = IOBASE;
+	dev->iobase = IOBASE_REMAPPED;
 	dev->init = geth_init;
 	dev->halt = geth_halt;
 	dev->send = geth_xmit;
 	dev->recv = geth_recv;
 	dev->write_hwaddr = geth_write_hwaddr;
+
+	printf("crashed after here? after init dev\n");
 #ifdef CONFIG_MCAST_TFTP
 	dev->mcast = geth_bcast_addr;
 #endif
@@ -1006,6 +1009,7 @@ err:
 	free(dma_desc_rx);
 	free(dma_desc_tx);
 	free(dev);
+	printf("ERROR!!!!!");
 
 	return -ENOMEM;
 }

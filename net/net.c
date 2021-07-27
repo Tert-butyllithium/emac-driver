@@ -401,12 +401,14 @@ void net_init(void)
 
 int net_loop(enum proto_t protocol)
 {
+	printf("net loop begin");
 	int ret = -22;
 
 	net_restarted = 0;
 	net_dev_exists = 0;
 	net_try_count = 1;
 	debug_cond(DEBUG_INT_STATE, "--- net_loop Entry\n");
+	printf("eth_current: %p",eth_current);
 
 	bootstage_mark_name(BOOTSTAGE_ID_ETH_START, "eth_start");
 	net_init();
@@ -415,6 +417,7 @@ int net_loop(enum proto_t protocol)
 		eth_set_current();
 		ret = eth_init();
 		if (ret < 0) {
+			printf("?????? why????");
 			eth_halt();
 			return ret;
 		}

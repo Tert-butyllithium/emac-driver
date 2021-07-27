@@ -13,22 +13,40 @@
 #include "eth_internal.h"
 
 
-// dummy functions start
+
+void eth_parse_enetaddr(const char *addr, uint8_t *enetaddr)
+{
+	char *end;
+	int i;
+
+	for (i = 0; i < 6; ++i) {
+		enetaddr[i] = addr ? simple_strtoul(addr, &end, 16) : 0;
+		if (addr)
+			addr = (*end) ? end + 1 : end;
+	}
+}
+
 int eth_env_get_enetaddr(const char *name, uint8_t *enetaddr)
 {
-  int i = 0;
-  for (; i < 4; i++) enetaddr[i] = 0;
-  return 1;
+	printf("\033[0;33m......eth_env_get_enetaddr......\n\033[0m");
+	eth_parse_enetaddr(env_get(name), enetaddr);
+	printf("name=%s, enetaaddr=%d.%d.%d.%d\n",name, enetaddr[0],enetaddr[1],enetaddr[2],enetaddr[3]);
+	return is_valid_ethaddr(enetaddr);
 }
 
 int eth_env_set_enetaddr(const char *name, const uint8_t *enetaddr)
 {
-	printf("\033[0;33m......eth_env_set_enetaddr(dummy)......\n\033[0m");
+	printf("\033[0;33m......eth_env_set_enetaddr......\n\033[0m");
 	printf("name=%s, enetaaddr=%d.%d.%d.%d",name, enetaddr[0],enetaddr[1],enetaddr[2],enetaddr[3]);
-	return 1;
-}
+	char buf[ARP_HLEN_ASCII + 1];
 
-// dummy functions end
+	if (eth_env_get_enetaddr(name, (uint8_t *)buf))
+		return -EEXIST;
+
+	sprintf(buf, "%pM", enetaddr);
+
+	return env_set(name, buf);
+}
 
 int eth_env_get_enetaddr_by_index(const char *base_name, int index,
 				 uchar *enetaddr)
@@ -71,6 +89,7 @@ int eth_mac_skip(int index)
 void eth_current_changed(void)
 {
 	char *act = env_get("ethact");
+	printf("\033[0;33mactive: %s \n\033[0m",act);
 	char *ethrotate;
 
 	/*

@@ -12,6 +12,8 @@
 #include "phy.h"
 #include <linux/errno.h>
 #include "eth_internal.h"
+#include "net_rand.h"
+#define CONFIG_NET_RANDOM_ETHADDR
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -94,7 +96,7 @@ int eth_get_dev_index(void)
 {
 	if (!eth_current)
 		return -1;
-
+	printf("eth_current: %d\n",eth_current->index);
 	return eth_current->index;
 }
 
@@ -137,20 +139,20 @@ unsigned long simple_strtoul(const char *cp, char **endp,
 }
 #endif
 
-void eth_parse_enetaddr(const char *addr, uint8_t *enetaddr)
-{
-	char *end;
-	int i;
+// void eth_parse_enetaddr(const char *addr, uint8_t *enetaddr)
+// {
+// 	char *end;
+// 	int i;
 
-	for (i = 0; i < 6; ++i) {
-		enetaddr[i] = addr ? simple_strtoul(addr, &end, 16) : 0;
-		if (addr)
-			addr = (*end) ? end + 1 : end;
-	}
-}
+// 	for (i = 0; i < 6; ++i) {
+// 		enetaddr[i] = addr ? simple_strtoul(addr, &end, 16) : 0;
+// 		if (addr)
+// 			addr = (*end) ? end + 1 : end;
+// 	}
+// }
+extern void eth_parse_enetaddr(const char *addr, uint8_t *enetaddr);
 
-
-static int __maybe_unused on_ethaddr(const char *name, const char *value, enum env_op op,
+static int on_ethaddr(const char *name, const char *value, enum env_op op,
 	int flags)
 {
 	int index;
@@ -230,6 +232,7 @@ int eth_write_hwaddr(struct eth_device *dev, const char *base_name,
 			       dev->name);
 	}
 
+	printf("eth_write_hwaddr finished\n");
 	return ret;
 }
 
@@ -316,6 +319,7 @@ int eth_initialize(void)
 	// 	pr_msg("Net Initialization Skipped\n");
 	// }
 	board_eth_init(NULL);
+	printf("board_eth_init finished\n");
 
 	if (!eth_devices) {
 		pr_err("No ethernet found.\n");
@@ -323,6 +327,7 @@ int eth_initialize(void)
 	} else {
 		struct eth_device *dev = eth_devices;
 		char *ethprime = env_get("ethprime");
+		printf("env_set: name: %s, val: %s\n", "ethprime", ethprime ? ethprime : "NULL");
 
 		bootstage_mark(BOOTSTAGE_ID_NET_ETH_INIT);
 		do {

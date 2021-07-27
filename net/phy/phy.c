@@ -636,6 +636,7 @@ static struct phy_device *phy_device_create(struct mii_dev *bus, int addr,
 	 * We allocate the device, and initialize the
 	 * default values
 	 */
+	printf("malloc dev at phy_device_create\n");
 	dev = malloc(sizeof(*dev));
 	if (!dev) {
 		printf("Failed to allocate PHY device for %s:%d\n",

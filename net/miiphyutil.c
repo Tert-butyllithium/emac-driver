@@ -109,6 +109,7 @@ void miiphy_register(const char *name,
 
 	/* allocate memory */
 	new_dev = mdio_alloc();
+    printf("malloc ldev\n");
 	ldev = malloc(sizeof(*ldev));
 
 	if (new_dev == NULL || ldev == NULL) {
@@ -140,6 +141,7 @@ struct mii_dev *mdio_alloc(void)
 {
 	struct mii_dev *bus;
 
+    printf("malloc bus\n");
 	bus = malloc(sizeof(*bus));
 	if (!bus)
 		return bus;

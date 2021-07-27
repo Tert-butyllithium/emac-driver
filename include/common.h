@@ -13,6 +13,15 @@
 #define _DEBUG	0
 #endif
 
+#define IOBASE                  0x04500000
+#define PHY_CLK_REG             (0x03000000 + 0x30)  /* SYS_CFG_BASE + EMAC_EPHY_CLK_REG0 */
+#define CCMU_BASE               0x02001000  /* CCMU Base Address */
+#define CCMU_GMAC_CLK_REG       0x097c	/* GMAC_BGR_REG */
+#define CCMU_GMAC_RST_BIT       16	/* GMAC_RST */
+#define CCMU_GMAC_GATING_BIT    0	/* GMAC_GATING */
+#define CCMU_EPHY_CLK_REG       0x0970	/* GMAC_25M_CLK_REG */
+#define CCMU_EPHY_GATING_BIT    31	/* GMAC_25M_CLK_GATING */
+
 
 #define puts(str)			\
 	do {						\
@@ -55,13 +64,14 @@ enum env_op {
 #define U_BOOT_ENV_CALLBACK(name, callback) 
 #define env_set_hex(varname, value)
 #define get_timer(x) (19260817)
-#define env_get(x) (x)
+
 #define ctrlc() (0)
 #define env_get_yesno(x) (0)
 #define get_env_id() (1)
 #define free(x) 
 
-void env_set(char* name, const char* val);
+int env_set(const char* name, const char* val);
+char* env_get(const char* name);
 
 #define WATCHDOG_RESET()
 
