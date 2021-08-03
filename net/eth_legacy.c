@@ -8,12 +8,12 @@
 #include "../include/common.h"
 // #include <command.h>
 // #include <environment.h>
+// #include <string.h>
 #include "net.h"
 #include "phy.h"
-#include <linux/errno.h>
+// #include <linux/errno.h>
 #include "eth_internal.h"
 #include "net_rand.h"
-#define CONFIG_NET_RANDOM_ETHADDR
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -102,41 +102,41 @@ int eth_get_dev_index(void)
 
 #ifndef __KERNEL__
 
-static const char *_parse_integer_fixup_radix(const char *s, unsigned int *base)
-{
-	if (*base == 0) {
-		if (s[0] == '0') {
-			if (tolower(s[1]) == 'x' && isxdigit(s[2]))
-				*base = 16;
-			else
-				*base = 8;
-		} else
-			*base = 10;
-	}
-	if (*base == 16 && s[0] == '0' && tolower(s[1]) == 'x')
-		s += 2;
-	return s;
-}
+// static const char *_parse_integer_fixup_radix(const char *s, unsigned int *base)
+// {
+// 	if (*base == 0) {
+// 		if (s[0] == '0') {
+// 			if (tolower(s[1]) == 'x' && isxdigit(s[2]))
+// 				*base = 16;
+// 			else
+// 				*base = 8;
+// 		} else
+// 			*base = 10;
+// 	}
+// 	if (*base == 16 && s[0] == '0' && tolower(s[1]) == 'x')
+// 		s += 2;
+// 	return s;
+// }
 
-unsigned long simple_strtoul(const char *cp, char **endp,
-				unsigned int base)
-{
-	unsigned long result = 0;
-	unsigned long value;
+// unsigned long simple_strtoul(const char *cp, char **endp,
+// 				unsigned int base)
+// {
+// 	unsigned long result = 0;
+// 	unsigned long value;
 
-	cp = _parse_integer_fixup_radix(cp, &base);
+// 	cp = _parse_integer_fixup_radix(cp, &base);
 
-	while (isxdigit(*cp) && (value = isdigit(*cp) ? *cp-'0' : (islower(*cp)
-	    ? toupper(*cp) : *cp)-'A'+10) < base) {
-		result = result*base + value;
-		cp++;
-	}
+// 	while (isxdigit(*cp) && (value = isdigit(*cp) ? *cp-'0' : (islower(*cp)
+// 	    ? toupper(*cp) : *cp)-'A'+10) < base) {
+// 		result = result*base + value;
+// 		cp++;
+// 	}
 
-	if (endp)
-		*endp = (char *)cp;
+// 	if (endp)
+// 		*endp = (char *)cp;
 
-	return result;
-}
+// 	return result;
+// }
 #endif
 
 // void eth_parse_enetaddr(const char *addr, uint8_t *enetaddr)
@@ -152,7 +152,7 @@ unsigned long simple_strtoul(const char *cp, char **endp,
 // }
 extern void eth_parse_enetaddr(const char *addr, uint8_t *enetaddr);
 
-static int on_ethaddr(const char *name, const char *value, enum env_op op,
+int on_ethaddr(const char *name, const char *value, enum env_op op,
 	int flags)
 {
 	int index;
@@ -187,8 +187,10 @@ U_BOOT_ENV_CALLBACK(ethaddr, on_ethaddr);
 int eth_write_hwaddr(struct eth_device *dev, const char *base_name,
 		   int eth_number)
 {
+	const static char default_mac[] = {'\x6a','\xe3','\xd1','\x16','\xb0','\x50'};
 	unsigned char env_enetaddr[ARP_HLEN];
 	int ret = 0;
+	int i=0;
 
 	eth_env_get_enetaddr_by_index(base_name, eth_number, env_enetaddr);
 
@@ -209,13 +211,16 @@ int eth_write_hwaddr(struct eth_device *dev, const char *base_name,
 					      dev->enetaddr);
 	} else if (is_zero_ethaddr(dev->enetaddr)) {
 #ifdef CONFIG_NET_RANDOM_ETHADDR
-		net_random_ethaddr(dev->enetaddr);
+		// net_random_ethaddr(dev->enetaddr);
+		for(;i<6;i++){
+			dev->enetaddr[i] = default_mac[i];
+		}
 		printf("\nWarning: %s (eth%d) using random MAC address - %pM\n",
 		       dev->name, eth_number, dev->enetaddr);
 #else
 		printf("\nError: %s address not set.\n",
 		       dev->name);
-		return -EINVAL;
+		return -22;
 #endif
 	}
 
@@ -223,7 +228,7 @@ int eth_write_hwaddr(struct eth_device *dev, const char *base_name,
 		if (!is_valid_ethaddr(dev->enetaddr)) {
 			printf("\nError: %s address %pM illegal value\n",
 			       dev->name, dev->enetaddr);
-			return -EINVAL;
+			return -22;
 		}
 
 		ret = dev->write_hwaddr(dev);
@@ -266,7 +271,7 @@ int eth_unregister(struct eth_device *dev)
 
 	/* No device */
 	if (!eth_devices)
-		return -ENODEV;
+		return -19;
 
 	for (cur = eth_devices; cur->next != eth_devices && cur->next != dev;
 	     cur = cur->next)
@@ -274,7 +279,7 @@ int eth_unregister(struct eth_device *dev)
 
 	/* Device not found */
 	if (cur->next != dev)
-		return -ENODEV;
+		return -19;
 
 	cur->next = dev->next;
 
@@ -322,7 +327,7 @@ int eth_initialize(void)
 	printf("board_eth_init finished\n");
 
 	if (!eth_devices) {
-		pr_err("No ethernet found.\n");
+		printf("No ethernet found.\n");
 		bootstage_error(BOOTSTAGE_ID_NET_ETH_START);
 	} else {
 		struct eth_device *dev = eth_devices;
@@ -410,7 +415,7 @@ int eth_init(void)
 
 	if (!eth_current) {
 		puts("No ethernet found.\n");
-		return -ENODEV;
+		return -19;
 	}
 
 	old_current = eth_current;
@@ -427,7 +432,7 @@ int eth_init(void)
 		eth_try_another(0);
 	} while (old_current != eth_current);
 
-	return -ETIMEDOUT;
+	return -110;
 }
 
 void eth_halt(void)
@@ -448,7 +453,7 @@ int eth_is_active(struct eth_device *dev)
 int eth_send(void *packet, int length)
 {
 	if (!eth_current)
-		return -ENODEV;
+		return -19;
 
 	return eth_current->send(eth_current, packet, length);
 }
@@ -456,7 +461,7 @@ int eth_send(void *packet, int length)
 int eth_rx(void)
 {
 	if (!eth_current)
-		return -ENODEV;
+		return -19;
 
 	return eth_current->recv(eth_current);
 }

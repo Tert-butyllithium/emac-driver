@@ -82,10 +82,7 @@
 
 // ############ CONFIGS #########
 
-#define CONFIG_CMD_PING
-
 #include "../include/common.h"
-#include "../misc/fast_sprintf.c"
 // #include <command.h>
 // #include <console.h>
 // #include <environment.h>
@@ -97,8 +94,8 @@
 #include <status_led.h>
 #endif
 // #include <watchdog.h>
-#include <linux/compiler.h>
-#include <linux/string.h>
+// #include <linux/compiler.h>
+// #include <linux/string.h>
 #include "arp.h"
 // #include "bootp.h"
 // #include "cdp.h"

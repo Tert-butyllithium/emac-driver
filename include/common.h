@@ -7,6 +7,9 @@
 #ifndef __COMMON_H_
 #define __COMMON_H_	1
 
+#define pr_fmt(fmt) "drv_net: " fmt
+// #define CONFIG_MACH_SUN20IW1
+
 #ifdef DEBUG
 #define _DEBUG	1
 #else
@@ -23,23 +26,109 @@
 #define CCMU_EPHY_GATING_BIT    31	/* GMAC_25M_CLK_GATING */
 
 
-#define puts(str)			\
-	do {						\
-		printf("%s\n",str);	\
-	} while (0)
+
 #ifdef __KERNEL__
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/types.h>
+// #include <linux/kernel.h>
+// #include <linux/module.h>
+// #include <linux/types.h>
+
+
 // #define printf printk
 #define printf(fmt, args...) printk(KERN_INFO "[network drviver]:" fmt, ##args)
 // #define printf(fmt, ...) printk(fmt, __VA_ARGS__)
 #define debug printk
-#elif
+#else
+#include <stddef.h>
 #include "../linux/types.h"
-typedef unsigned long long size_t;
+
+#include "autoconf.h"
+#define ALIGN(x, a)	(((x) + (a) - 1) & ~((a) - 1))
+
+
+# define do_div(n,base) ({					\
+	uint32_t __base = (base);				\
+	uint32_t __rem;						\
+	__rem = ((uint64_t)(n)) % __base;			\
+	(n) = ((uint64_t)(n)) / __base;				\
+	__rem;							\
+})
+
+
+#define prink printd
+// typedef unsigned char u8;
+// typedef unsigned short u16;
+// typedef unsigned int u32;
+// typedef unsigned long u64;
+
+typedef unsigned char uchar;
+typedef unsigned long ulong;
+typedef unsigned short ushort;
+typedef unsigned int uint;
+
+#ifdef __GNUC__
+typedef __signed__ long long __s64;
+typedef unsigned long long __u64;
+#else
+typedef __signed__ long long __s64;
+typedef unsigned long long __u64;
 #endif
-#define putc(chr) printf("%c",chr); 
+
+typedef __s8  s8;
+typedef __u8  u8;
+typedef __s16 s16;
+typedef __u16 u16;
+typedef __s32 s32;
+typedef __u32 u32;
+typedef __s64 s64;
+typedef __u64 u64;
+
+
+#define debug(fmt, args...) printf(pr_fmt(fmt), ##args)
+
+#define __weak  __attribute__((weak)) 
+#define __always_inline __inline __attribute__((__always_inline__))
+
+
+# define __iomem
+#define printf printd
+#define printk printd
+#define panic(x)
+
+# define likely(x)	 __builtin_expect(!!(x), 1)            
+# define unlikely(x)	__builtin_expect(!!(x), 0)
+
+#define BUG() do { \
+	printk("BUG at %s:%d/%s()!\n", __FILE__, __LINE__, __func__); \
+	panic("BUG!"); \
+} while (0)
+
+#define BUG_ON(condition) do { if (unlikely(condition)) BUG(); } while (0)
+
+#define printd(s, ...) 
+
+// string.h
+
+int strcmp(const char* s1, const char* s2);
+unsigned long simple_strtoul(const char *cp, char **endp,
+				unsigned int base);
+
+int memcmp(const void * cs,const void * ct,size_t count);
+char * strncpy(char * dest,const char *src,size_t count);
+void * memset(void * s,int c,size_t count);
+int snprintf(char *buf, size_t size, const char *fmt, ...);
+int sprintf(char *buf, const char *fmt, ...);
+size_t strlen(const char * s);
+char * strchr(const char * s, int c);
+#define strcpy(dest, src) strncpy(dest, src, 2147483647)
+
+#include "byteorder.h"
+
+
+
+#endif // endif __KERNEL__
+#define putc(chr) printf("%c", chr)
+#define puts(str) printf("%s\n", str)
+
 
 enum env_op {
 	env_op_create,
@@ -63,7 +152,8 @@ enum env_op {
 #define H_PROGRAMMATIC 	(1 << 9)
 #define U_BOOT_ENV_CALLBACK(name, callback) 
 #define env_set_hex(varname, value)
-#define get_timer(x) (19260817)
+
+ulong get_timer(ulong base);
 
 #define ctrlc() (0)
 #define env_get_yesno(x) (0)
@@ -78,14 +168,6 @@ char* env_get(const char* name);
 #define tftp_start(x)
 #define bootp_reset()
 #define bootp_request()
- 
-// typedef unsigned char u8;
-// typedef unsigned short u16;
-// typedef unsigned int u32;
-// typedef unsigned long u64;
-
-typedef unsigned char uchar;
-typedef unsigned long ulong;
 
 
 
@@ -148,6 +230,62 @@ static inline void flush_cache(unsigned long addr, unsigned long size)
 }
 
 void invalidate_dcache_range(unsigned long start, unsigned long end);
+
+ulong	get_tbclk     (void);
+
+/* arch/$(ARCH)/lib/ticks.S */
+uint64_t get_ticks(void);
+void	wait_ticks    (unsigned long);
+
+/* arch/$(ARCH)/lib/time.c */
+ulong	usec2ticks    (unsigned long usec);
+ulong	ticks2usec    (unsigned long ticks);
+
+
+#define IS_ERR_VALUE(x) unlikely((x) >= (unsigned long)-4085)
+
+static inline long IS_ERR(const void *ptr)
+{
+	return IS_ERR_VALUE((unsigned long)ptr);
+}
+
+/*
+ * ffs: find first bit set. This is defined the same way as
+ * the libc and compiler builtin ffs routines, therefore
+ * differs in spirit from the above ffz (man ffs).
+ */
+
+static inline int generic_ffs(int x)
+{
+	int r = 1;
+
+	if (!x)
+		return 0;
+	if (!(x & 0xffff)) {
+		x >>= 16;
+		r += 16;
+	}
+	if (!(x & 0xff)) {
+		x >>= 8;
+		r += 8;
+	}
+	if (!(x & 0xf)) {
+		x >>= 4;
+		r += 4;
+	}
+	if (!(x & 3)) {
+		x >>= 2;
+		r += 2;
+	}
+	if (!(x & 1)) {
+		x >>= 1;
+		r += 1;
+	}
+	return r;
+}
+
+# define ffs generic_ffs
+
 
 #endif	/* __COMMON_H_ */
 

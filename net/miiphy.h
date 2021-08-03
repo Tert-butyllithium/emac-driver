@@ -15,8 +15,8 @@
 #define _miiphy_h_
 
 #include "../include/common.h"
-#include "linux/mii.h"
-#include <linux/list.h>
+#include "../include/mii.h"
+// #include <linux/list.h>
 #include "net.h"
 #include "phy.h"
 

@@ -1,4 +1,4 @@
-#include <linux/string.h>
+// #include <string.h>
 
 #include "../include/common.h"
 

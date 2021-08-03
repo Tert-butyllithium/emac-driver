@@ -12,8 +12,9 @@
 #ifndef __NET_H__
 #define __NET_H__
 
-#include <asm/cache.h>
-#include <asm/byteorder.h>	/* for nton* / ntoh* stuff */
+// #include <asm/cache.h>
+#include "../include/common.h"
+// #include <asm/byteorder.h>	/* for nton* / ntoh* stuff */
 
 #define DEBUG_LL_STATE 1	/* Link local state machine changes */
 #define DEBUG_DEV_PKT 1		/* Packets or info directed to the device */
@@ -32,7 +33,7 @@
 # define PKTBUFSRX	4
 #endif
 
-#define PKTALIGN	ARCH_DMA_MINALIGN
+#define PKTALIGN	CONFIG_SYS_CACHELINE_SIZE
 
 /* ARP hardware address length */
 #define ARP_HLEN 6
@@ -43,6 +44,7 @@
 #define ARP_HLEN_ASCII (ARP_HLEN * 2) + (ARP_HLEN - 1)
 
 /* IPv4 addresses are always 32 bits in size */
+
 struct in_addr {
 	__be32 s_addr;
 };

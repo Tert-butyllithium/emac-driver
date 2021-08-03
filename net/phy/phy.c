@@ -22,9 +22,10 @@
 #include "../../include/common.h"
 #include "../phy.h"
 #include "../miiphy.h"
-#include "../../linux/mii.h"
+#include "../../include/mii.h"
 #include "../../linux/mdio.h"
 #include "../../linux/ethtool.h"
+// #include <string.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 

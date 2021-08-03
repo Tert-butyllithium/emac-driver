@@ -1,26 +1,48 @@
 
 CROSS_COMPILE := /sdk/lichee/brandy-2.0/tools/toolchain/riscv64-linux-x86_64-20200528/bin/riscv64-unknown-linux-gnu-
-KDIR := /sdk/lichee/linux-5.4
-PWD := $(shell pwd)
-obj-m := emacdriver.o 
+CC := $(CROSS_COMPILE)gcc
 
-emacdriver-y := main.o
-emacdriver-y += misc/nvedit.o
-emacdriver-y += common.o
-emacdriver-y += net/checksum.o
-emacdriver-y += net/arp.o
-emacdriver-y += net/eth_legacy.o 
-emacdriver-y += net/eth_common.o
-emacdriver-y += net/net.o
-emacdriver-y += net/ping.o
+CFLAGS = -nostdlib -static -mcmodel=medany -g 
 
-emacdriver-y += net/miiphyutil.o
-emacdriver-y += net/phy/phy.o
+link_script = drv_net.lds
 
-emacdriver-y += net/emac/sunxi_geth.o
+src := main.c
+src += common.c
 
-all:
-	make -C $(KDIR) M=$(PWD) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=riscv modules
-	cp emacdriver.ko /sdk/out/d1-nezha/emacdriver.ko
+src += misc/vsnprintf.c
+src += misc/string.c
+src += misc/timer.c
+src += misc/time.c
+src += misc/nvedit.c
+
+src += net/checksum.c
+src += net/arp.c
+src += net/eth_legacy.c 
+src += net/eth_common.c
+src += net/net.c
+src += net/ping.c
+
+src += net/miiphyutil.c
+src += net/phy/phy.c
+
+src += net/emac/sunxi_geth.c
+
+objs := $(src:%.c=%.o)
+
+
+# main: $(objs)
+
+# all:
+# 	(CROSS_COMPILE)gcc $(CFLAGS) $(src) -o main
+
+all: drv_net
+
+drv_net: drv_net.bin
+	$(CROSS_COMPILE)objcopy -O binary --set-section-flags .bss=alloc,load,contents $< $@
+	cp $@ $(target_dir)
+
+drv_net.bin: $(objs)
+	$(CROSS_COMPILE)gcc $(CFLAGS) $(objs) -T $(link_script) -o $@
+
 clean:
-	make -C $(KDIR) M=$(PWD) clean
+	-@rm drv_net drv_net.bin

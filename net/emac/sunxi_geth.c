@@ -7,13 +7,13 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
-#include <linux/types.h>
+// #include <linux/types.h>
 #include "../../include/common.h"
-#include <asm/io.h>
+// #include <asm/io.h>
 // #include <memalign.h>
 #include "../net.h"
 // #include <malloc.h>
-#include "../../linux/mii.h"
+#include "../../include/mii.h"
 // #include <netdev.h>
 // #include <errno.h>
 // #include <sys_config.h>
@@ -21,18 +21,18 @@
 // #include <fdt_support.h>
 #include "../miiphy.h"
 #include "../phy.h"
+#include "../../include/asm/io.h"
 
 #include "../../include/common.h"
 
-extern u64 PHY_CLK_REG_REMAPPED;
-extern u64 CCMU_BASE_REMAPPED;
-extern u64 IOBASE_REMAPPED;
+u64 PHY_CLK_REG_REMAPPED;
+u64 CCMU_BASE_REMAPPED;
+u64 IOBASE_REMAPPED;
 
 
 #define DISABLE_AUTONEG
 //#define CONFIG_HARD_CHECKSUM	/* EMAC_RX_CTL0 bit27: CHECK_CRC */
-#define CONFIG_SUNXI_EXT_PHY
-#define CONFIG_MACH_SUN20IW1
+
 
 #ifdef CONFIG_MACH_SUN20IW1
 /*
@@ -951,7 +951,7 @@ int geth_initialize(bd_t *bis)
 
 	dev = (struct eth_device *)malloc(sizeof *dev);
 	if (!dev)
-		return -ENOMEM;
+		return -12;
 
 	memset(dev, 0, (size_t)sizeof(*dev));
 	strcpy(dev->name, "eth0");
@@ -996,7 +996,7 @@ int geth_initialize(bd_t *bis)
 
 	if (geth_sys_init()) {
 		printf("geth_sys_init fail!\n");
-		return -ENOMEM;
+		return -12;
 	}
 
 	eth_register(dev);
@@ -1011,5 +1011,5 @@ err:
 	free(dev);
 	printf("ERROR!!!!!");
 
-	return -ENOMEM;
+	return -12;
 }

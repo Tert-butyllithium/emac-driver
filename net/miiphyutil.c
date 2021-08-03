@@ -14,9 +14,10 @@
 #include "miiphy.h"
 #include "phy.h"
 #include "../linux/mdio.h"
+// #include <string.h>
 
-#include <asm/types.h>
-#include <linux/list.h>
+// #include <asm/types.h>
+// #include <linux/list.h>
 // #include <malloc.h>
 #include "net.h"
 
@@ -98,7 +99,7 @@ void miiphy_register(const char *name,
 	struct mii_dev *new_dev;
 	struct legacy_mii_dev *ldev;
 
-	BUG_ON(strlen(name) >= MDIO_NAME_LEN);
+	// BUG_ON(strlen(name) >= MDIO_NAME_LEN);
 
 	/* check if we have unique name */
 	new_dev = miiphy_get_dev_by_name(name);

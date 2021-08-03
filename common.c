@@ -1,5 +1,6 @@
 #include "include/common.h"
 #include "net/net.h"
+#include "include/ctype.h"
 
 void __assert_fail(const char *assertion, const char *file, unsigned int line,
 		   const char *function);
@@ -12,6 +13,73 @@ void __assert_fail(const char *assertion, const char *file, unsigned int line,
 {
 	printf("%s:%u: %s: Assertion `%s' failed.", file, line, function,
 	      assertion);
+}
+
+// string.h 
+
+
+int strcmp(const char* s1, const char* s2)
+{
+    while(*s1 && (*s1 == *s2))
+    {
+        s1++;
+        s2++;
+    }
+    return *(const unsigned char*)s1 - *(const unsigned char*)s2;
+}
+
+static const char *_parse_integer_fixup_radix(const char *s, unsigned int *base)
+{
+	if (*base == 0) {
+		if (s[0] == '0') {
+			if (tolower(s[1]) == 'x' && isxdigit(s[2]))
+				*base = 16;
+			else
+				*base = 8;
+		} else
+			*base = 10;
+	}
+	if (*base == 16 && s[0] == '0' && tolower(s[1]) == 'x')
+		s += 2;
+	return s;
+}
+
+
+unsigned long simple_strtoul(const char *cp, char **endp,
+				unsigned int base)
+{
+	unsigned long result = 0;
+	unsigned long value;
+
+	cp = _parse_integer_fixup_radix(cp, &base);
+
+	while (isxdigit(*cp) && (value = isdigit(*cp) ? *cp-'0' : (islower(*cp)
+	    ? toupper(*cp) : *cp)-'A'+10) < base) {
+		result = result*base + value;
+		cp++;
+	}
+
+	if (endp)
+		*endp = (char *)cp;
+
+	return result;
+}
+
+/**
+ * memcmp - Compare two areas of memory
+ * @cs: One area of memory
+ * @ct: Another area of memory
+ * @count: The size of the area.
+ */
+int memcmp(const void * cs,const void * ct,size_t count)
+{
+	const unsigned char *su1, *su2;
+	int res = 0;
+
+	for( su1 = cs, su2 = ct; 0 < count; ++su1, ++su2, count--)
+		if ((res = *su1 - *su2) != 0)
+			break;
+	return res;
 }
 
 
@@ -47,6 +115,60 @@ void * memcpy(void *dest, const void *src, size_t count)
 
 	return dest;
 }
+
+/**
+ * strncpy - Copy a length-limited, %NUL-terminated string
+ * @dest: Where to copy the string to
+ * @src: Where to copy the string from
+ * @count: The maximum number of bytes to copy
+ *
+ * Note that unlike userspace strncpy, this does not %NUL-pad the buffer.
+ * However, the result is not %NUL-terminated if the source exceeds
+ * @count bytes.
+ */
+char * strncpy(char * dest,const char *src,size_t count)
+{
+	char *tmp = dest;
+
+	while (count-- && (*dest++ = *src++) != '\0')
+		/* nothing */;
+
+	return tmp;
+}
+
+/**
+ * memset - Fill a region of memory with the given value
+ * @s: Pointer to the start of the area.
+ * @c: The byte to fill the area with
+ * @count: The size of the area.
+ *
+ * Do not use memset() to access IO space, use memset_io() instead.
+ */
+void * memset(void * s,int c,size_t count)
+{
+	unsigned long *sl = (unsigned long *) s;
+	char *s8;
+	unsigned long cl = 0;
+	int i;
+
+	/* do it one word at a time (32 bits or 64 bits) while possible */
+	if ( ((ulong)s & (sizeof(*sl) - 1)) == 0) {
+		for (i = 0; i < sizeof(*sl); i++) {
+			cl <<= 8;
+			cl |= c & 0xff;
+		}
+		while (count >= sizeof(*sl)) {
+			*sl++ = cl;
+			count -= sizeof(*sl);
+		}
+	}
+	s8 = (char *)sl;
+	while (count--)
+		*s8++ = c;
+
+	return s;
+}
+
 
 static unsigned long memalign_roundup(unsigned long alignment, unsigned long addr){
 	unsigned long tmp = addr % alignment;
@@ -86,12 +208,8 @@ void* memalign(unsigned long long alignment, unsigned long long size){
 	return (void*) (buf + sz - size);
 }
 
-void udelay(unsigned long usec){
-    int i=0;
-    for(; i < 1000; i++){
-        asm volatile("ADDI x0, x0, 0");
-    }
-}
+
+#define L1_CACHE_BYTES CONFIG_SYS_CACHELINE_SIZE
 
 void flush_dcache_range(unsigned long start, unsigned long end)
 {

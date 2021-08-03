@@ -9,11 +9,15 @@
 #ifndef _PHY_H
 #define _PHY_H
 
-#include <linux/list.h>
+// #include <linux/list.h>
+#include "../include/linklist.h"
 #include "../include/common.h"
 // #include <linux/mii.h>
 // #include <linux/ethtool.h>
 // #include <linux/mdio.h>
+#ifndef CONFIG_SUNXI_EXT_PHY
+#define CONFIG_SUNXI_EXT_PHY 1
+#endif
 
 #define PHY_FIXED_ID		0xa5a55a5a
 
